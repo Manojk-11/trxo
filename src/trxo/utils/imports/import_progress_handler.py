@@ -136,7 +136,7 @@ class ImportProgressHandler(logging.Handler):
         # Silence StreamHandlers so we own the console exclusively
         for h in list(lib_logger.handlers):
             if isinstance(h, logging.StreamHandler) and not isinstance(
-                h, ImportProgressHandler
+                h, (ImportProgressHandler, logging.FileHandler)
             ):
                 self._silenced_handlers.append(h)
                 lib_logger.removeHandler(h)
