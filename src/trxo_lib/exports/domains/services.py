@@ -9,6 +9,7 @@ Fetches complete service configurations by individual service ID.
 
 from typing import Any
 
+from trxo_lib.config.api_endpoints import AMEndpoints
 from trxo_lib.config.api_headers import get_headers
 from trxo_lib.config.constants import DEFAULT_REALM
 from trxo_lib.logging import warning
@@ -43,13 +44,11 @@ def services_response_filter(data, *, exporter, scope, realm, headers):
             continue
 
         if scope.lower() == "global":
-            detail_url = exporter._construct_api_url(
-                api_base_url, f"/am/json/global-config/services/{service_id}"
-            )
+            detail_url = exporter._construct_api_url(api_base_url, AMEndpoints.Services.global_item(service_id))
         else:
             detail_url = exporter._construct_api_url(
                 api_base_url,
-                f"/am/json/realms/root/realms/{realm}/realm-config/services/{service_id}",
+                AMEndpoints.Services.realm_item(realm, service_id),
             )
 
         try:
@@ -102,9 +101,9 @@ class ServicesExporter(BaseExporter):
         headers = get_headers("services")
 
         if scope.lower() == "global":
-            api_endpoint = "/am/json/global-config/services?_queryFilter=true"
+            api_endpoint = AMEndpoints.Services.LIST_GLOBAL
         else:
-            api_endpoint = f"/am/json/realms/root/realms/{realm}/realm-config/services?_queryFilter=true"
+            api_endpoint = AMEndpoints.Services.list_realm(realm)
 
         captured = {}
         original_save_response = self.save_response
@@ -158,9 +157,9 @@ class ServicesExportService:
 
         headers = get_headers("services")
         if scope.lower() == "global":
-            api_endpoint = "/am/json/global-config/services?_queryFilter=true"
+            api_endpoint = AMEndpoints.Services.LIST_GLOBAL
         else:
-            api_endpoint = f"/am/json/realms/root/realms/{realm}/realm-config/services?_queryFilter=true"
+            api_endpoint = AMEndpoints.Services.list_realm(realm)
 
         safe_kwargs = self.kwargs.copy()
         if "commit" in safe_kwargs:

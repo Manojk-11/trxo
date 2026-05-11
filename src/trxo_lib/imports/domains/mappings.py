@@ -13,6 +13,7 @@ from trxo_lib.exceptions import TrxoValidationError
 import json
 from typing import Any, Dict, List
 
+from trxo_lib.config.api_endpoints import IDMEndpoints
 from trxo_lib.config.api_headers import get_headers
 from trxo_lib.logging import error, info, warning
 
@@ -37,7 +38,7 @@ class MappingsImporter(BaseImporter):
         return item.get("name")
 
     def get_api_endpoint(self, item_id: str, base_url: str) -> str:
-        return f"{base_url}/openidm/config/sync"
+        return f"{base_url}{IDMEndpoints.Config.SYNC}"
 
     def _wrap_for_diff(self, data):
         """

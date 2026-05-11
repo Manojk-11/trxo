@@ -9,14 +9,12 @@ import json
 from typing import Any, Dict, List, Optional
 
 
+from trxo_lib.config.api_endpoints import AMEndpoints
 from trxo_lib.config.api_headers import get_headers
 from trxo_lib.config.constants import DEFAULT_REALM
 from trxo_lib.logging import error, info
 
 from trxo_lib.imports.processor import BaseImporter
-
-# Base path template
-AGENTS_BASE = "/am/json/realms/root/realms/{realm}/realm-config/agents"
 
 
 class AgentsImporter(BaseImporter):
@@ -45,7 +43,7 @@ class AgentsImporter(BaseImporter):
     def get_api_endpoint(self, item_id: str, base_url: str) -> str:
         return self._construct_api_url(
             base_url,
-            f"/am/json/realms/root/realms/{self.realm}/realm-config/agents/{self.agent_type}/{item_id}",
+            AMEndpoints.Agents.item(self.realm, self.agent_type, item_id),
         )
 
     def _build_payload(self, item_data: Dict[str, Any]) -> str:

@@ -10,6 +10,7 @@ Import functionality for PingOne Advanced Identity Cloud policies.
 import json
 from typing import Any, Dict, List, Optional
 
+from trxo_lib.config.api_endpoints import AMEndpoints, IDMEndpoints
 from trxo_lib.config.api_headers import get_headers
 from trxo_lib.config.constants import DEFAULT_REALM
 from trxo_lib.logging import error, info
@@ -75,17 +76,17 @@ class PoliciesImporter(BaseImporter):
         if product == "idm":
             return self._construct_api_url(
                 base_url,
-                f"/openidm/config/{item_id}",
+                IDMEndpoints.Config.item(item_id),
             )
-            
+
         if is_policy_set:
             return self._construct_api_url(
                 base_url,
-                f"/am/json/realms/root/realms/{self.realm}/applications/{item_id}",
+                AMEndpoints.Policies.policy_set(self.realm, item_id),
             )
         return self._construct_api_url(
             base_url,
-            f"/am/json/realms/root/realms/{self.realm}/policies/{item_id}",
+            AMEndpoints.Policies.item(self.realm, item_id),
         )
 
     def update_item(self, item_data: Dict[str, Any], token: str, base_url: str) -> bool:

@@ -3,6 +3,7 @@ Webhooks export service.
 """
 
 from typing import Any
+from trxo_lib.config.api_endpoints import AMEndpoints
 from trxo_lib.config.api_headers import get_headers
 from trxo_lib.config.constants import DEFAULT_REALM
 from trxo_lib.exports.processor import BaseExporter
@@ -23,10 +24,7 @@ class WebhooksExportService:
 
         return exporter.export_data(
             command_name="webhooks",
-            api_endpoint=(
-                f"/am/json/realms/root/realms/{realm}/realm-config/webhooks"
-                "?_queryFilter=true"
-            ),
+            api_endpoint=AMEndpoints.Webhooks.list_all(realm),
             headers=headers,
             **safe_kwargs,
         )

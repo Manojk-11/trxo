@@ -13,6 +13,7 @@ import json
 from typing import Any, Dict, List, Optional
 
 
+from trxo_lib.config.api_endpoints import AMEndpoints
 from trxo_lib.config.api_headers import get_headers
 from trxo_lib.config.constants import DEFAULT_REALM
 from trxo_lib.logging import error, info, warning
@@ -38,12 +39,11 @@ class ServicesImporter(BaseImporter):
     def get_api_endpoint(self, item_id: str, base_url: str) -> str:
         if self.scope == "global":
             return self._construct_api_url(
-                base_url, f"/am/json/global-config/services/{item_id}"
+                base_url, AMEndpoints.Services.global_item(item_id)
             )
         return self._construct_api_url(
             base_url,
-            f"/am/json/realms/root/realms/{self.realm}/"
-            f"realm-config/services/{item_id}",
+            AMEndpoints.Services.realm_item(self.realm, item_id),
         )
 
     def _get_item_identifier(self, item: Dict[str, Any]) -> Optional[str]:

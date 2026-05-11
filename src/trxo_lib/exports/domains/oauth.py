@@ -8,6 +8,7 @@ PingOne Advanced Identity Cloud OAuth2 clients with script dependencies.
 import base64
 from typing import Any, Dict, Set
 
+from trxo_lib.config.api_endpoints import AMEndpoints
 from trxo_lib.config.api_headers import get_headers
 from trxo_lib.config.constants import DEFAULT_REALM, IGNORED_SCRIPT_IDS
 from trxo_lib.logging import error, info, warning
@@ -110,7 +111,7 @@ class OAuthExporter(BaseExporter):
     ) -> Dict[str, Any]:
         """Fetch individual script data by ID"""
         url = self._construct_api_url(
-            base_url, f"/am/json/realms/root/realms/{self.realm}/scripts/{script_id}"
+            base_url, AMEndpoints.Scripts.item(self.realm, script_id)
         )
         headers = get_headers("oauth")
         headers = {**headers, **self.build_auth_headers(token)}
@@ -149,8 +150,7 @@ class OAuthExporter(BaseExporter):
         """Fetch individual OAuth client data by ID"""
         url = self._construct_api_url(
             base_url,
-            f"/am/json/realms/root/realms/{self.realm}"
-            f"/realm-config/agents/OAuth2Client/{client_id}",
+            AMEndpoints.OAuth.client(self.realm, client_id),
         )
         headers = get_headers("oauth")
         headers = {**headers, **self.build_auth_headers(token)}
@@ -169,10 +169,7 @@ class OAuthExporter(BaseExporter):
         """Discover OAuth/OIDC provider service endpoints from realm services."""
         headers = get_headers("oauth")
         headers = {**headers, **self.build_auth_headers(token)}
-        list_ep = (
-            f"/am/json/realms/root/realms/{self.realm}/"
-            "realm-config/services?_queryFilter=true"
-        )
+        list_ep = AMEndpoints.OAuth.list_services(self.realm)
         list_url = self._construct_api_url(base_url, list_ep)
         response = self.make_http_request(list_url, "GET", headers, suppress_logs=True)
         data = response.json()
@@ -189,7 +186,7 @@ class OAuthExporter(BaseExporter):
             lower = sid.lower()
             if "oauth" in lower or "oidc" in lower or "openid" in lower:
                 endpoints.append(
-                    f"/am/json/realms/root/realms/{self.realm}/realm-config/services/{sid}"
+                    AMEndpoints.OAuth.service(self.realm, sid)
                 )
         return endpoints
 
@@ -239,10 +236,7 @@ class OauthExportService:
 
         return exporter.export_data(
             command_name="oauth",
-            api_endpoint=(
-                f"/am/json/realms/root/realms/{realm}/realm-config/"
-                "agents/OAuth2Client?_queryFilter=true"
-            ),
+            api_endpoint=AMEndpoints.OAuth.list_clients(realm),
             headers=headers,
             response_filter=process_oauth_response(exporter, realm),
             **safe_kwargs,

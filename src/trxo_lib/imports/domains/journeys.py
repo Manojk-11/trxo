@@ -25,6 +25,7 @@ from urllib.parse import quote
 
 import httpx
 
+from trxo_lib.config.api_endpoints import AMEndpoints, IDMEndpoints
 from trxo_lib.config.api_headers import get_headers
 from trxo_lib.config.constants import DEFAULT_REALM
 from trxo_lib.logging import error, info, success, warning
@@ -70,8 +71,7 @@ class JourneyImporter(BaseImporter):
     def get_api_endpoint(self, item_id: str, base_url: str) -> str:
         return self._construct_api_url(
             base_url,
-            f"/am/json/realms/root/realms/{self.realm}/realm-config/"
-            f"authentication/authenticationtrees/trees/{item_id}",
+            AMEndpoints.Journeys.tree(self.realm, item_id),
         )
 
     # ── override import_from_file so we can detect enriched format ──────
@@ -958,7 +958,7 @@ class JourneyImporter(BaseImporter):
 
         url = self._construct_api_url(
             base_url,
-            f"/am/json/realms/root/realms/{self.realm}/scripts/{quote(script_id)}",
+            AMEndpoints.Scripts.item(self.realm, quote(script_id)),
         )
         headers = get_headers("journeys")
         headers = {**headers, **self.build_auth_headers(token)}
@@ -973,7 +973,7 @@ class JourneyImporter(BaseImporter):
                     # Switch to create logic
                     create_url = self._construct_api_url(
                         base_url,
-                        f"/am/json/realms/root/realms/{self.realm}/scripts?_action=create",
+                        AMEndpoints.Scripts.create(self.realm),
                     )
                     self.make_http_request(
                         create_url, "POST", headers, json.dumps(payload_data)
@@ -1001,7 +1001,7 @@ class JourneyImporter(BaseImporter):
         if idm_base.endswith("/am"):
             idm_base = idm_base[:-3]
 
-        url = f"{idm_base}/openidm/config/emailTemplate/{quote(name)}"
+        url = f"{idm_base}{IDMEndpoints.Config.email_template(quote(name))}"
 
         headers = {
             "Content-Type": "application/json",
@@ -1030,9 +1030,7 @@ class JourneyImporter(BaseImporter):
 
         url = self._construct_api_url(
             base_url,
-            f"/am/json/realms/root/realms/{self.realm}"
-            f"/realm-config/authentication/authenticationtrees"
-            f"/nodes/{quote(node_type)}/{quote(node_id)}",
+            AMEndpoints.Journeys.node(self.realm, quote(node_type), quote(node_id)),
         )
 
         payload_data = {k: v for k, v in node_data.items() if k not in ("_id", "_rev")}
@@ -1054,8 +1052,7 @@ class JourneyImporter(BaseImporter):
         """POST metadata ignoring 500/409 conflict errors which indicate it exists."""
         url = self._construct_api_url(
             base_url,
-            f"/am/json/realms/root/realms/{self.realm}/realm-config/"
-            "saml2/remote/?_action=importEntity",
+            AMEndpoints.SAML.import_remote_metadata(self.realm),
         )
         try:
             encoded = base64.urlsafe_b64encode(metadata_xml.encode("utf-8")).decode(
@@ -1145,8 +1142,7 @@ class JourneyImporter(BaseImporter):
         """Import one SAML2 circle of trust via PUT."""
         url = self._construct_api_url(
             base_url,
-            f"/am/json/realms/root/realms/{self.realm}"
-            f"/realm-config/federation/circlesoftrust/{quote(cot_id)}",
+            AMEndpoints.SAML.circle_of_trust(self.realm, quote(cot_id)),
         )
         payload_data = {k: v for k, v in cot_cfg.items() if k not in {"_rev", "_type"}}
         headers = get_headers("circle_of_trust")

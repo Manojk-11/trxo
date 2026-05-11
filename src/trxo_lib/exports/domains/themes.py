@@ -3,6 +3,7 @@ Themes export service.
 """
 
 from typing import Any
+from trxo_lib.config.api_endpoints import IDMEndpoints
 from trxo_lib.config.api_headers import get_headers
 from trxo_lib.exports.processor import BaseExporter
 
@@ -17,9 +18,9 @@ class ThemesExportService:
         headers = get_headers("themes")
 
         endpoint = (
-            "/openidm/config/ui/themerealm"
+            IDMEndpoints.Config.THEME_REALM
             if not realm
-            else f"/openidm/config/ui/themerealm?_fields=realm/{realm}"
+            else IDMEndpoints.Config.theme_realm_for_realm(realm)
         )
 
         safe_kwargs = self.kwargs.copy()

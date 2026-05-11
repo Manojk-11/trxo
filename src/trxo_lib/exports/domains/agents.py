@@ -6,6 +6,7 @@ Cloud Identity Gateway, java and web agents.
 """
 
 from typing import Any
+from trxo_lib.config.api_endpoints import AMEndpoints
 from trxo_lib.config.api_headers import get_headers
 from trxo_lib.config.constants import DEFAULT_REALM
 from trxo_lib.exports.processor import BaseExporter
@@ -26,10 +27,7 @@ class AgentsGatewayExportService:
 
         return exporter.export_data(
             command_name="agents_gateway",
-            api_endpoint=(
-                f"/am/json/realms/root/realms/{realm}/realm-config/agents/"
-                "IdentityGatewayAgent?_queryFilter=true"
-            ),
+            api_endpoint=AMEndpoints.Agents.list_by_type(realm, "IdentityGatewayAgent"),
             headers=headers,
             **safe_kwargs,
         )
@@ -50,10 +48,7 @@ class AgentsJavaExportService:
 
         return exporter.export_data(
             command_name="agents_java",
-            api_endpoint=(
-                f"/am/json/realms/root/realms/{realm}/realm-config/agents/"
-                "J2EEAgent?_queryFilter=true"
-            ),
+            api_endpoint=AMEndpoints.Agents.list_by_type(realm, "J2EEAgent"),
             headers=headers,
             **safe_kwargs,
         )
@@ -74,10 +69,7 @@ class AgentsWebExportService:
 
         return exporter.export_data(
             command_name="agents_web",
-            api_endpoint=(
-                f"/am/json/realms/root/realms/{realm}/realm-config/agents/"
-                "WebAgent?_queryFilter=true"
-            ),
+            api_endpoint=AMEndpoints.Agents.list_by_type(realm, "WebAgent"),
             headers=headers,
             **safe_kwargs,
         )

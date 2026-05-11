@@ -6,6 +6,7 @@ Exports from /openidm/config/sync endpoint.
 """
 
 from typing import Any
+from trxo_lib.config.api_endpoints import IDMEndpoints
 from trxo_lib.config.api_headers import get_headers
 from trxo_lib.exports.processor import BaseExporter
 
@@ -24,7 +25,7 @@ class MappingsExportService:
 
         return exporter.export_data(
             command_name="mappings",
-            api_endpoint="/openidm/config/sync",
+            api_endpoint=IDMEndpoints.Config.SYNC,
             headers=headers,
             **kwargs,
         )

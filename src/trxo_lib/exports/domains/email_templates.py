@@ -7,6 +7,7 @@ Filters /openidm/config?_queryFilter=true to only include items with _id startin
 """
 
 from typing import Any
+from trxo_lib.config.api_endpoints import IDMEndpoints
 from trxo_lib.config.api_headers import get_headers
 from trxo_lib.exports.processor import BaseExporter
 
@@ -25,7 +26,7 @@ class EmailTemplatesExportService:
 
         return exporter.export_data(
             command_name="email_templates",
-            api_endpoint='/openidm/config?_queryFilter=_id sw "emailTemplate"',
+            api_endpoint=IDMEndpoints.Config.LIST_EMAIL_TEMPLATES,
             headers=headers,
             **safe_kwargs,
         )

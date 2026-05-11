@@ -10,6 +10,7 @@ Import functionality for PingIDM Email Templates.
 import json
 from typing import Any, Dict, List
 
+from trxo_lib.config.api_endpoints import IDMEndpoints
 from trxo_lib.config.api_headers import get_headers
 from trxo_lib.logging import error, info
 
@@ -30,7 +31,7 @@ class EmailTemplatesImporter(BaseImporter):
         return "Email Templates"
 
     def get_api_endpoint(self, item_id: str, base_url: str) -> str:
-        return f"{base_url}/openidm/config/{item_id}"
+        return f"{base_url}{IDMEndpoints.Config.item(item_id)}"
 
     def update_item(self, item_data: Dict[str, Any], token: str, base_url: str) -> bool:
         """Upsert Email Template using PUT"""
