@@ -11,6 +11,7 @@ import json
 from typing import Any, Dict, List, Optional
 
 
+from trxo_lib.config.api_endpoints import IDMEndpoints
 from trxo_lib.config.api_headers import get_headers
 from trxo_lib.logging import error, success
 
@@ -31,7 +32,7 @@ class ConnectorsImporter(BaseImporter):
         return "connectors"
 
     def get_api_endpoint(self, item_id: str, base_url: str) -> str:
-        return f"{base_url}/openidm/config/{item_id}"
+        return f"{base_url}{IDMEndpoints.Config.item(item_id)}"
 
     def delete_item(self, item_id: str, token: str, base_url: str) -> bool:
         """Delete a connector using DELETE /openidm/config/{item_id}"""

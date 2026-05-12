@@ -7,6 +7,7 @@ clients with script dependencies.
 
 from trxo_lib.exceptions import TrxoAbort, TrxoIOError, TrxoValidationError
 import json
+from trxo_lib.config.api_endpoints import AMEndpoints
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -44,13 +45,13 @@ class OAuthImporter(BaseImporter):
     def get_api_endpoint(self, item_id: str, base_url: str) -> str:
         return self._construct_api_url(
             base_url,
-            f"/am/json/realms/root/realms/{self.realm}/realm-config/agents/OAuth2Client/{item_id}",
+            AMEndpoints.OAuth.client(self.realm, item_id),
         )
 
     def get_provider_api_endpoint(self, base_url: str) -> str:
         return self._construct_api_url(
             base_url,
-            f"/am/json/realms/root/realms/{self.realm}/realm-config/oauth-oidc",
+            AMEndpoints.OAuth.provider_config(self.realm),
         )
 
     def get_provider_api_endpoints(self, base_url: str) -> List[str]:
@@ -339,7 +340,7 @@ class OAuthImporter(BaseImporter):
         try:
             list_url = self._construct_api_url(
                 base_url,
-                f"/am/json/realms/root/realms/{self.realm}/realm-config/services?_queryFilter=true",
+                AMEndpoints.OAuth.list_services(self.realm),
             )
             list_response = self.make_http_request(list_url, "GET", headers)
             list_data = list_response.json()
@@ -357,7 +358,7 @@ class OAuthImporter(BaseImporter):
                         dynamic_urls.append(
                             self._construct_api_url(
                                 base_url,
-                                f"/am/json/realms/root/realms/{self.realm}/realm-config/services/{sid}",
+                                AMEndpoints.OAuth.service(self.realm, sid),
                             )
                         )
         except Exception:

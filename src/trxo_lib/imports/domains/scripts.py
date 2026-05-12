@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional
 
 import httpx
 
+from trxo_lib.config.api_endpoints import AMEndpoints
 from trxo_lib.config.api_headers import get_headers
 from trxo_lib.config.constants import (
     DEFAULT_REALM,
@@ -59,7 +60,7 @@ class ScriptImporter(BaseImporter):
     def get_api_endpoint(self, item_id: str, base_url: str) -> str:
         return self._construct_api_url(
             base_url,
-            f"/am/json/realms/root/realms/{self.realm}/scripts/{item_id}",
+            AMEndpoints.Scripts.item(self.realm, item_id),
         )
 
     def update_item(self, item_data: Dict[str, Any], token: str, base_url: str) -> bool:
@@ -132,7 +133,7 @@ class ScriptImporter(BaseImporter):
                     # Switch to create logic
                     collection_url = self._construct_api_url(
                         base_url,
-                        f"/am/json/realms/root/realms/{self.realm}/scripts?_action=create",
+                        AMEndpoints.Scripts.create(self.realm),
                     )
                     self.make_http_request(collection_url, "POST", headers, payload)
                 else:

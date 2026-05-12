@@ -9,6 +9,7 @@ import base64
 from typing import Any, Dict, List
 
 
+from trxo_lib.config.api_endpoints import AMEndpoints
 from trxo_lib.config.api_headers import get_headers
 from trxo_lib.config.constants import DEFAULT_REALM
 from trxo_lib.logging import error, info, warning
@@ -32,9 +33,7 @@ class SamlExporter(BaseExporter):
     ):
         headers = get_headers("saml")
 
-        api_endpoint = (
-            f"/am/json/realms/root/realms/{realm}/realm-config/saml2?_queryFilter=true"
-        )
+        api_endpoint = AMEndpoints.SAML.list_providers(realm)
 
         captured = {}
         original_save_response = self.save_response
@@ -111,10 +110,7 @@ def process_saml_response(exporter_instance: BaseExporter, realm: str):
         entity_ids_list = []
 
         # Step 1: Get SAML providers list
-        providers_endpoint = (
-            f"/am/json/realms/root/realms/{realm}/realm-config/saml2"
-            "?_queryFilter=true"
-        )
+        providers_endpoint = AMEndpoints.SAML.list_providers(realm)
 
         providers_url = exporter_instance._construct_api_url(
             api_base_url, providers_endpoint
@@ -146,10 +142,7 @@ def process_saml_response(exporter_instance: BaseExporter, realm: str):
                     # info(f"Fetching {location} provider: {entity_id or provider_id}")
 
                     # Get complete provider data
-                    provider_endpoint = (
-                        f"/am/json/realms/root/realms/{realm}"
-                        f"/realm-config/saml2/{location}/{provider_id}"
-                    )
+                    provider_endpoint = AMEndpoints.SAML.provider(realm, location, provider_id)
 
                     provider_url = exporter_instance._construct_api_url(
                         api_base_url, provider_endpoint
@@ -200,7 +193,7 @@ def process_saml_response(exporter_instance: BaseExporter, realm: str):
             for entity_id in entity_ids_list:
                 try:
                     # Use the JSP endpoint to export metadata for each entity
-                    metadata_endpoint = f"/am/saml2/jsp/exportmetadata.jsp?entityid={entity_id}&realm={realm}"
+                    metadata_endpoint = AMEndpoints.SAML.export_metadata_jsp(entity_id, realm)
 
                     metadata_url = exporter_instance._construct_api_url(
                         api_base_url, metadata_endpoint
@@ -300,7 +293,7 @@ def fetch_scripts(
 
         try:
             # info(f"Fetching script: {script_id}")
-            script_endpoint = f"/am/json/realms/root/realms/{realm}/scripts/{script_id}"
+            script_endpoint = AMEndpoints.Scripts.item(realm, script_id)
             script_url = exporter_instance._construct_api_url(
                 api_base_url, script_endpoint
             )
@@ -349,9 +342,7 @@ class SamlExportService:
 
         return exporter.export_data(
             command_name="saml",
-            api_endpoint=(
-                f"/am/json/realms/root/realms/{realm}/realm-config/saml2?_queryFilter=true"
-            ),
+            api_endpoint=AMEndpoints.SAML.list_providers(realm),
             headers=headers,
             response_filter=process_saml_response(exporter, realm),
             **safe_kwargs,

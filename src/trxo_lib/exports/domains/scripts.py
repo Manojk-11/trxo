@@ -8,6 +8,7 @@ import base64
 import logging
 from typing import Any, Dict
 
+from trxo_lib.config.api_endpoints import AMEndpoints
 from trxo_lib.config.api_headers import get_headers
 from trxo_lib.config.constants import DEFAULT_REALM
 from trxo_lib.exports.processor import BaseExporter
@@ -61,7 +62,7 @@ class ScriptsExportService:
         headers = get_headers("scripts")
         realm = self.kwargs.get("realm", DEFAULT_REALM)
 
-        api_endpoint = f"/am/json/realms/root/realms/{realm}/scripts?_queryFilter=true"
+        api_endpoint = AMEndpoints.Scripts.list_all(realm)
 
         return exporter.export_data(
             command_name="scripts",

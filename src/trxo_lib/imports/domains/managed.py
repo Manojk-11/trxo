@@ -14,6 +14,7 @@ import json
 import os
 from typing import Any, Dict, List
 
+from trxo_lib.config.api_endpoints import IDMEndpoints
 from trxo_lib.config.api_headers import get_headers
 from trxo_lib.logging import error, info, warning
 
@@ -38,7 +39,7 @@ class ManagedObjectsImporter(BaseImporter):
         return item.get("name")
 
     def get_api_endpoint(self, item_id: str, base_url: str) -> str:
-        return f"{base_url}/openidm/config/managed"
+        return f"{base_url}{IDMEndpoints.Config.MANAGED}"
 
     def delete_item(self, item_id: str, token: str, base_url: str) -> bool:
         """
@@ -133,7 +134,7 @@ class ManagedObjectsImporter(BaseImporter):
         self, object_name: str, token: str, base_url: str
     ) -> Dict[str, Any]:
         """Fetch all properties from server schema for a managed object"""
-        url = f"{base_url}/openidm/schema/managed/{object_name}"
+        url = self._construct_api_url(base_url, IDMEndpoints.Schema.managed_object(object_name))
         info(
             f"[DEBUG] Fetching server schema properties for '{object_name}' from: {url}"
         )
@@ -209,7 +210,7 @@ class ManagedObjectsImporter(BaseImporter):
         headers = {**headers, **self.build_auth_headers(token)}
 
         for prop_name in orphaned_props:
-            url = f"{base_url}/openidm/schema/managed/{object_name}/properties/{prop_name}"
+            url = self._construct_api_url(base_url, IDMEndpoints.Schema.managed_object_property(object_name, prop_name))
             info(
                 f"[DEBUG] Deleting orphaned property '{prop_name}' from '{object_name}' "
                 f"via DELETE: {url}"
@@ -271,7 +272,7 @@ class ManagedObjectsImporter(BaseImporter):
 
         for prop_name, prop_data in properties.items():
             if isinstance(prop_data, dict) and prop_data.get("type") == "relationship":
-                url = f"{base_url}/openidm/schema/managed/{object_name}/properties/{prop_name}"
+                url = self._construct_api_url(base_url, IDMEndpoints.Schema.managed_object_property(object_name, prop_name))
                 info(
                     f"[DEBUG] Processing relationship property '{prop_name}' for '{object_name}'"
                 )

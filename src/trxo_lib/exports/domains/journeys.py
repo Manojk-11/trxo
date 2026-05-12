@@ -21,6 +21,7 @@ from trxo_lib.config.constants import DEFAULT_REALM
 from trxo_lib.logging import error, info, warning
 
 from trxo_lib.exports.processor import BaseExporter
+from trxo_lib.config.api_endpoints import AMEndpoints, IDMEndpoints
 
 # ---------------------------------------------------------------------------
 # Node-type constants
@@ -99,11 +100,7 @@ class JourneyExporter(BaseExporter):
         try:
             self.export_data(
                 command_name="journeys",
-                api_endpoint=(
-                    f"/am/json/realms/root/realms/{realm}"
-                    "/realm-config/authentication/authenticationtrees"
-                    "/trees?_queryFilter=true"
-                ),
+                api_endpoint=AMEndpoints.Journeys.list_all(realm),
                 headers=_am_headers(),
                 view=False,
                 jwk_path=jwk_path,
@@ -450,13 +447,10 @@ def _fetch_all_nodes(
     exporter.logger.debug("Fetching all nodes via nextdescendents (bulk)")
     url = exporter._construct_api_url(
         api_base_url,
-        f"/am/json/realms/root/realms/{realm}"
-        "/realm-config/authentication/authenticationtrees/nodes",
+        AMEndpoints.Journeys.nodes_next_descendants(realm),
     )
     try:
-        resp = exporter.make_http_request(
-            url + "?_action=nextdescendents", "POST", headers, "{}"
-        )
+        resp = exporter.make_http_request(url, "POST", headers, "{}")
         data = resp.json()
         items = data.get("result", data) if isinstance(data, dict) else data
         node_map = {n["_id"]: n for n in items if isinstance(n, dict) and "_id" in n}
@@ -476,8 +470,7 @@ def _fetch_single_tree(
 ) -> Optional[Dict[str, Any]]:
     url = exporter._construct_api_url(
         api_base_url,
-        f"/am/json/realms/root/realms/{realm}"
-        f"/realm-config/authentication/authenticationtrees/trees/{quote(tree_id)}",
+        AMEndpoints.Journeys.tree(realm, quote(tree_id)),
     )
     try:
         resp = exporter.make_http_request(url, "GET", headers)
@@ -496,7 +489,7 @@ def _fetch_script(
 ) -> Optional[Dict[str, Any]]:
     url = exporter._construct_api_url(
         api_base_url,
-        f"/am/json/realms/root/realms/{realm}/scripts/{quote(script_id)}",
+        AMEndpoints.Scripts.item(realm, quote(script_id)),
     )
     try:
         resp = exporter.make_http_request(url, "GET", headers)
@@ -522,7 +515,7 @@ def _fetch_email_template(
     headers: Dict[str, str],
     name: str,
 ) -> Optional[Dict[str, Any]]:
-    url = f"{idm_base}/openidm/config/emailTemplate/{quote(name)}"
+    url = f"{idm_base}{IDMEndpoints.Config.email_template(quote(name))}"
     try:
         resp = exporter.make_http_request(url, "GET", headers)
         return resp.json()
@@ -541,7 +534,7 @@ def _fetch_saml_provider_list(
     exporter.logger.debug("Fetching SAML provider list (shallow lookup)")
     url = exporter._construct_api_url(
         api_base_url,
-        f"/am/json/realms/root/realms/{realm}/realm-config/saml2?_queryFilter=true",
+        AMEndpoints.SAML.list_providers(realm),
     )
     try:
         resp = exporter.make_http_request(url, "GET", headers)
@@ -568,8 +561,7 @@ def _fetch_circles_of_trust(
     exporter.logger.debug("Fetching circles of trust (shallow lookup)")
     url = exporter._construct_api_url(
         api_base_url,
-        f"/am/json/realms/root/realms/{realm}"
-        "/realm-config/federation/circlesoftrust?_queryFilter=true",
+        AMEndpoints.SAML.list_circles_of_trust(realm),
     )
     try:
         resp = exporter.make_http_request(url, "GET", headers)
@@ -589,10 +581,9 @@ def _fetch_social_providers(
     headers: Dict[str, str],
 ) -> Dict[str, Any]:
     exporter.logger.debug("Fetching social identity providers from IDM")
-    url = f"{idm_base}/openidm/config"
     try:
         resp = exporter.make_http_request(
-            url + "?_queryFilter=_id+sw+%22identityProvider%22" + "&_fields=_id",
+            f"{idm_base}{IDMEndpoints.Config.LIST_IDENTITY_PROVIDERS}",
             "GET",
             headers,
         )
@@ -604,7 +595,7 @@ def _fetch_social_providers(
             name = config_id.split("/")[-1]
             try:
                 detail_resp = exporter.make_http_request(
-                    f"{idm_base}/openidm/config/{config_id}", "GET", headers
+                    f"{idm_base}{IDMEndpoints.Config.item(config_id)}", "GET", headers
                 )
                 providers[name] = detail_resp.json()
                 exporter.logger.debug(f"Collected social provider: {name}")
@@ -623,10 +614,11 @@ def _fetch_themes(
     headers: Dict[str, str],
 ) -> list:
     exporter.logger.debug("Fetching theme realm data from IDM")
-    url = f"{idm_base}/openidm/config/ui/themerealm"
     try:
         resp = exporter.make_http_request(
-            url + f"?_fields=realm%2F{realm}", "GET", headers
+            f"{idm_base}{IDMEndpoints.Config.THEME_REALM}?_fields=realm%2F{realm}",
+            "GET",
+            headers,
         )
         data = resp.json()
         realm_data = data.get("realm", {}).get(realm, [])
@@ -666,8 +658,7 @@ def _fetch_saml_entity(
     # Fetch full provider detail
     detail_url = exporter._construct_api_url(
         api_base_url,
-        f"/am/json/realms/root/realms/{realm}"
-        f"/realm-config/saml2/{location}/{quote(provider_id, safe='')}",
+        AMEndpoints.SAML.provider(realm, location, quote(provider_id, safe="")),
     )
     try:
         detail_resp = exporter.make_http_request(detail_url, "GET", am_hdrs)
@@ -683,11 +674,7 @@ def _fetch_saml_entity(
     host = api_base_url.rstrip("/")
     if host.endswith("/am"):
         host = host[:-3]
-    meta_url = (
-        f"{host}/am/saml2/jsp/exportmetadata.jsp"
-        f"?entityid={quote(entity_id, safe='')}"
-        f"&realm={quote('/' + realm, safe='')}"
-    )
+    meta_url = f"{host}{AMEndpoints.SAML.export_metadata_jsp(quote(entity_id, safe=''), quote('/' + realm, safe=''))}"
     try:
         meta_resp = exporter.make_http_request(meta_url, "GET", am_hdrs)
         entity_entry["metadata"] = meta_resp.text
@@ -799,11 +786,7 @@ class JourneysExportService:
 
         return exporter.export_data(
             command_name="journeys",
-            api_endpoint=(
-                f"/am/json/realms/root/realms/{realm}"
-                "/realm-config/authentication/authenticationtrees"
-                "/trees?_queryFilter=true"
-            ),
+            api_endpoint=AMEndpoints.Journeys.list_all(realm),
             headers=headers,
             response_filter=process_journey_response(exporter, realm),
             **safe_kwargs,

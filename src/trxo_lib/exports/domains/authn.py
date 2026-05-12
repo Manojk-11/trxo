@@ -5,6 +5,7 @@ Exports realm authentication settings from realm:
   GET /am/json/realms/root/realms/{realm-name}/realm-config/authentication
 """
 
+from trxo_lib.config.api_endpoints import AMEndpoints
 from trxo_lib.config.api_headers import get_headers
 from trxo_lib.config.constants import DEFAULT_REALM
 
@@ -27,7 +28,7 @@ class AuthnExportService:
 
         return exporter.export_data(
             command_name="authn",
-            api_endpoint=f"/am/json/realms/root/realms/{realm}/realm-config/authentication",
+            api_endpoint=AMEndpoints.Authn.realm_settings(realm),
             headers=headers,
             **safe_kwargs,
         )

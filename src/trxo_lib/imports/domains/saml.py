@@ -13,6 +13,7 @@ from urllib.parse import quote
 import httpx
 
 from trxo_lib.exceptions import TrxoAbort
+from trxo_lib.config.api_endpoints import AMEndpoints
 from trxo_lib.config.api_headers import get_headers
 from trxo_lib.config.constants import DEFAULT_REALM
 from trxo_lib.logging import error, info, success, warning
@@ -38,7 +39,7 @@ class SamlImporter(BaseImporter):
         # This is a placeholder - actual endpoint depends on location
         return self._construct_api_url(
             base_url,
-            f"/am/json/realms/root/realms/{self.realm}/" "realm-config/saml2",
+            AMEndpoints.SAML.list_providers(self.realm),
         )
 
     def import_from_file(
@@ -520,7 +521,7 @@ class SamlImporter(BaseImporter):
         # Construct URL
         url = self._construct_api_url(
             base_url,
-            f"/am/json/realms/root/realms/{self.realm}/scripts/{script_id}",
+            AMEndpoints.Scripts.item(self.realm, script_id),
         )
 
         headers = get_headers("saml")
@@ -586,8 +587,7 @@ class SamlImporter(BaseImporter):
         # Step 1: Check if metadata already exists
         check_url = self._construct_api_url(
             base_url,
-            f"/am/saml2/jsp/exportmetadata.jsp?entityid="
-            f"{quote(entity_id)}&realm={self.realm}",
+            AMEndpoints.SAML.export_metadata_jsp(quote(entity_id), self.realm),
         )
 
         headers = get_headers("saml_metadata_check")
@@ -621,8 +621,7 @@ class SamlImporter(BaseImporter):
         """POST metadata to create/update remote entity"""
         url = self._construct_api_url(
             base_url,
-            f"/am/json/realms/root/realms/{self.realm}/realm-config/"
-            "saml2/remote/?_action=importEntity",
+            AMEndpoints.SAML.import_remote_metadata(self.realm),
         )
 
         # Base64 URL encode the metadata XML
@@ -667,8 +666,7 @@ class SamlImporter(BaseImporter):
         # Construct URL with location and ID
         url = self._construct_api_url(
             base_url,
-            f"/am/json/realms/root/realms/{self.realm}/realm-config/"
-            f"saml2/{location}/{entity_id}",
+            AMEndpoints.SAML.provider(self.realm, location, entity_id),
         )
 
         headers = get_headers("saml")
@@ -691,8 +689,7 @@ class SamlImporter(BaseImporter):
                         # Entity doesn't exist → Create
                         post_hosted_url = self._construct_api_url(
                             base_url,
-                            f"/am/json/realms/root/realms/{self.realm}/"
-                            "realm-config/saml2/hosted?_action=create",
+                            AMEndpoints.SAML.create_hosted_provider(self.realm),
                         )
 
                         self.make_http_request(
@@ -755,7 +752,7 @@ class SamlImporter(BaseImporter):
         # Try hosted first
         hosted_url = self._construct_api_url(
             base_url,
-            f"/am/json/realms/root/realms/{self.realm}/realm-config/saml2/hosted/{item_id}",
+            AMEndpoints.SAML.provider(self.realm, "hosted", item_id),
         )
         auth_headers = self.build_auth_headers(token)
         saml_headers = get_headers("saml")
@@ -775,7 +772,7 @@ class SamlImporter(BaseImporter):
         # Try remote
         remote_url = self._construct_api_url(
             base_url,
-            f"/am/json/realms/root/realms/{self.realm}/realm-config/saml2/remote/{item_id}",
+            AMEndpoints.SAML.provider(self.realm, "remote", item_id),
         )
         try:
             self.make_http_request(remote_url, "DELETE", headers)

@@ -10,6 +10,8 @@ only include items with _id containing "application/".
 from trxo_lib.exceptions import TrxoAbort
 from typing import Any, Dict, List
 
+from trxo_lib.config.api_endpoints import AMEndpoints, IDMEndpoints
+
 
 from trxo_lib.exports.domains.oauth import OAuthExporter
 from trxo_lib.config.api_headers import get_headers
@@ -77,7 +79,7 @@ def _export_applications_with_deps(
     """Export managed applications plus referenced OAuth2 clients/provider/scripts."""
     base = BaseExporter()
     oauth_gate: OAuthExporter | None = None
-    api_endpoint = f"/openidm/managed/{realm}_application?_queryFilter=true"
+    api_endpoint = IDMEndpoints.Managed.list_applications(realm)
     base.product = "idm"
 
     try:
@@ -252,7 +254,7 @@ class ApplicationsExportService:
 
         return exporter.export_data(
             command_name="applications",
-            api_endpoint=f"/openidm/managed/{self.kwargs.get('realm')}_application?_queryFilter=true",
+            api_endpoint=IDMEndpoints.Managed.list_applications(self.kwargs.get("realm")),
             headers=headers,
             **safe_kwargs,
         )

@@ -6,6 +6,7 @@ Exports from /openidm/config/managed endpoint.
 """
 
 from typing import Any
+from trxo_lib.config.api_endpoints import IDMEndpoints
 from trxo_lib.config.api_headers import get_headers
 from trxo_lib.exports.processor import BaseExporter
 
@@ -24,7 +25,7 @@ class ManagedExportService:
 
         return exporter.export_data(
             command_name="managed",
-            api_endpoint="/openidm/config/managed",
+            api_endpoint=IDMEndpoints.Config.MANAGED,
             headers=headers,
             **safe_kwargs,
         )

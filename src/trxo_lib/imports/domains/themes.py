@@ -15,6 +15,7 @@ Fix summary:
 import json
 from typing import Any, Dict, List, Optional
 
+from trxo_lib.config.api_endpoints import IDMEndpoints
 from trxo_lib.config.api_headers import get_headers
 from trxo_lib.config.constants import DEFAULT_REALM
 from trxo_lib.logging import error, info
@@ -49,7 +50,7 @@ class ThemesImporter(BaseImporter):
         return "themes"
 
     def get_api_endpoint(self, item_id: str, base_url: str) -> str:
-        return f"{base_url}/openidm/config/ui/themerealm"
+        return f"{base_url}{IDMEndpoints.Config.THEME_REALM}"
 
     def _fetch_current(self, token: str, base_url: str) -> Dict[str, Any]:
         """

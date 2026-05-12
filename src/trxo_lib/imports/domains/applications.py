@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Optional
 
 from trxo_lib.imports.domains.oauth import OAuthImporter
 from trxo_lib.imports.domains.scripts import ScriptImporter
+from trxo_lib.config.api_endpoints import IDMEndpoints
 from trxo_lib.config.api_headers import get_headers
 from trxo_lib.config.constants import DEFAULT_REALM
 from trxo_lib.logging import error, info, warning
@@ -58,7 +59,7 @@ class ApplicationsImporter(BaseImporter):
         return "Applications"
 
     def get_api_endpoint(self, item_id: str, base_url: str) -> str:
-        return f"{base_url}/openidm/managed/{self.realm}_application/{item_id}"
+        return f"{base_url}{IDMEndpoints.Managed.application(self.realm, item_id)}"
 
     def load_data_from_file(self, file_path: str) -> List[Dict[str, Any]]:
         """Load applications; optionally pick up clients/scripts from the same export."""

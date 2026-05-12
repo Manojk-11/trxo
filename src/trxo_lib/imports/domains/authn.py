@@ -8,6 +8,7 @@ import json
 from typing import Any, Dict, List
 
 
+from trxo_lib.config.api_endpoints import AMEndpoints
 from trxo_lib.config.api_headers import get_headers
 from trxo_lib.config.constants import DEFAULT_REALM
 from trxo_lib.logging import error, info
@@ -33,7 +34,7 @@ class AuthnImporter(BaseImporter):
     def get_api_endpoint(self, item_id: str, base_url: str) -> str:
         return self._construct_api_url(
             base_url,
-            f"/am/json/realms/root/realms/{self.realm}/" "realm-config/authentication",
+            AMEndpoints.Authn.realm_settings(self.realm),
         )
 
     def update_item(self, item_data: Dict[str, Any], token: str, base_url: str) -> bool:

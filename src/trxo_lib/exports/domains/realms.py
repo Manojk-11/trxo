@@ -3,6 +3,7 @@ Realms export service.
 """
 
 from typing import Any
+from trxo_lib.config.api_endpoints import AMEndpoints
 from trxo_lib.config.api_headers import get_headers
 from trxo_lib.exports.processor import BaseExporter
 
@@ -21,7 +22,7 @@ class RealmsExportService:
 
         return exporter.export_data(
             command_name="realms",
-            api_endpoint="/am/json/global-config/realms?_queryFilter=true",
+            api_endpoint=AMEndpoints.Realms.LIST_ALL,
             headers=headers,
             **safe_kwargs,
         )

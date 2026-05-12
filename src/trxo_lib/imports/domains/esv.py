@@ -6,6 +6,7 @@ import base64
 import json
 from typing import Any, Dict, List
 
+from trxo_lib.config.api_endpoints import ESVEndpoints
 from trxo_lib.config.api_headers import get_headers
 from trxo_lib.logging import error, info, warning
 from trxo_lib.imports.processor import BaseImporter
@@ -21,7 +22,7 @@ class EsvVariablesImporter(BaseImporter):
         return "Environment_Variables"
 
     def get_api_endpoint(self, item_id: str, base_url: str) -> str:
-        return f"{base_url}/environment/variables/{item_id}"
+        return f"{base_url}{ESVEndpoints.Variables.item(item_id)}"
 
     def update_item(self, item_data: Dict[str, Any], token: str, base_url: str) -> bool:
         """Update a single Environment Variable via API"""
@@ -69,7 +70,7 @@ class EsvSecretsImporter(BaseImporter):
         return "Environment_Secrets"
 
     def get_api_endpoint(self, item_id: str, base_url: str) -> str:
-        return f"{base_url}/environment/secrets/{item_id}"
+        return f"{base_url}{ESVEndpoints.Secrets.item(item_id)}"
 
     def update_item(self, item_data: Dict[str, Any], token: str, base_url: str) -> bool:
         """Update a single Environment Secret via API"""
@@ -143,7 +144,7 @@ class EsvSecretsImporter(BaseImporter):
                         )
                         return False
 
-                    versions_endpoint = f"{base_endpoint}/versions?_action=create"
+                    versions_endpoint = f"{base_url}{ESVEndpoints.Secrets.create_version(item_id)}"
                     payload = json.dumps({"valueBase64": item_data["valueBase64"]})
 
                     self.make_http_request(versions_endpoint, "POST", headers, payload)
@@ -156,7 +157,7 @@ class EsvSecretsImporter(BaseImporter):
                 if "description" in item_data:
                     desc_payload = json.dumps({"description": item_data["description"]})
                     self.make_http_request(
-                        f"{base_endpoint}?_action=setDescription",
+                        f"{base_url}{ESVEndpoints.Secrets.set_description(item_id)}",
                         "POST",
                         headers,
                         desc_payload,

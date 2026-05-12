@@ -1,5 +1,6 @@
 from typing import Any, List
 
+from trxo_lib.config.api_endpoints import AMEndpoints, IDMEndpoints
 from trxo_lib.config.api_headers import get_headers
 from trxo_lib.config.constants import DEFAULT_REALM
 from trxo_lib.logging import error, warning, info
@@ -32,7 +33,7 @@ def fetch_global_policies(exporter_instance: BaseExporter) -> List[Any]:
 
     try:
         # 1. Get the list of all configs to find fieldPolicies
-        list_url = exporter_instance._construct_api_url(idm_base_url, "/openidm/config")
+        list_url = exporter_instance._construct_api_url(idm_base_url, IDMEndpoints.Config.LIST)
         response = exporter_instance.make_http_request(list_url, "GET", headers)
         configs_data = response.json()
 
@@ -64,7 +65,7 @@ def fetch_global_policies(exporter_instance: BaseExporter) -> List[Any]:
         # 2. ForgeRock Cloud (AIC) often hides fieldPolicy/* from the main list.
         #    Try to discover them via managed objects.
         try:
-            managed_url = exporter_instance._construct_api_url(idm_base_url, "/openidm/config/managed")
+            managed_url = exporter_instance._construct_api_url(idm_base_url, IDMEndpoints.Config.MANAGED)
             managed_resp = exporter_instance.make_http_request(managed_url, "GET", headers)
             if managed_resp.status_code == 200:
                 managed_json = managed_resp.json()
@@ -87,7 +88,7 @@ def fetch_global_policies(exporter_instance: BaseExporter) -> List[Any]:
         for cid in target_ids:
             try:
                 config_url = exporter_instance._construct_api_url(
-                    idm_base_url, f"/openidm/config/{cid}"
+                    idm_base_url, IDMEndpoints.Config.item(cid)
                 )
                 config_resp = exporter_instance.make_http_request(
                     config_url, "GET", headers, suppress_logs=True
@@ -135,7 +136,7 @@ def process_policies_response(
         # Fetch AM policy sets (applications)
         url = exporter_instance._construct_api_url(
             api_base_url,
-            f"/am/json/realms/root/realms/{realm}/applications?_queryFilter=true",
+            AMEndpoints.Policies.list_policy_sets(realm),
         )
         headers = get_headers("policy_sets")
         headers = {**headers, **exporter_instance.build_auth_headers(token)}
@@ -185,7 +186,7 @@ class PoliciesExportService:
 
         return exporter.export_data(
             command_name="policies",
-            api_endpoint=f"/am/json/realms/root/realms/{realm}/policies?_queryFilter=true",
+            api_endpoint=AMEndpoints.Policies.list_all(realm),
             headers=headers,
             response_filter=process_policies_response(exporter, realm, global_policies),
             **safe_kwargs,

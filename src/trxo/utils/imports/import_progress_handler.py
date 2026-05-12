@@ -15,21 +15,19 @@ from rich.console import Console
 from rich.live import Live
 from rich.panel import Panel
 from rich.progress import (
-    BarColumn,
-    MofNCompleteColumn,
     Progress,
     SpinnerColumn,
     TextColumn,
     TimeElapsedColumn,
 )
-from rich.table import Table
 from rich.text import Text
 
 # ── Pattern matching ──────────────────────────────────────────────────────────
 
 # Individual item success — catches "✔ ...", "Successfully imported X", etc.
 _ITEM_SUCCESS_RE = re.compile(
-    r"^(?:✔\s*|Successfully\s+(?:imported|processed|updated|created|deleted|upserted)\s+|Upserted\s+)"
+    r"^(?:✔\s*|Successfully\s+(?:imported|processed|updated|created|deleted|upserted)\s+|"
+    r"(?:Created|Updated|Upserted|Deleted|Processed)\s+)"
     r"(?P<item>.+)",
     re.IGNORECASE,
 )
@@ -48,13 +46,9 @@ _ITEM_WARNING_RE = re.compile(
     re.IGNORECASE,
 )
 
-# Aggregate summary lines emitted by library-level summary (not per-item events)
-_AGGREGATE_SUMMARY_RE = re.compile(r"^[✔✖]\s*\d+\s+\w+", re.IGNORECASE)
-
-# Count hint buried in a stage message — e.g., "Processing 12 scripts..."
-_COUNT_RE = re.compile(
-    r"\b(\d+)\s+(?:item|script|client|entit|object|mapping|journey"
-    r"|entri|privilege|connector|webhook|endpoint|template|agent|polic)",
+# Generic errors that accompany item failures (should not count as separate items)
+_GENERIC_ERROR_RE = re.compile(
+    r"^(?:✖\s*)(?:HTTP error|Request error|SSL error|Connect error|Request timeout)",
     re.IGNORECASE,
 )
 
@@ -69,7 +63,11 @@ _SUPPRESS_RE = re.compile(
     r"|API call"
     r"|Data integrity verified"  # hash check — not useful noise
     r"|\[DEBUG\]"
-    r"|Processing \d+ )",  # covered separately via _COUNT_RE
+    r"|Processing \d+ "
+    r"|Successfully processed \d+ "
+    r"|Failed to process \d+ "
+    r"|✔ \d+ "
+    r"|No \w+ were processed)",
     re.IGNORECASE,
 )
 
@@ -96,12 +94,6 @@ class ImportProgressHandler(logging.Handler):
         self.command_name = command_name
         self.console = console or Console()
 
-        # Counters
-        self.success_count = 0
-        self.failure_count = 0
-        self.warning_count = 0
-        self.total_hint: Optional[int] = None
-
         # We'll temporarily silence pre-existing StreamHandlers on trxo_lib
         # while we own the output, to avoid double-printing at WARNING level.
         self._silenced_handlers: List[logging.Handler] = []
@@ -110,7 +102,7 @@ class ImportProgressHandler(logging.Handler):
         self._progress = self._make_progress()
         self._task_id = self._progress.add_task(
             f"[bold cyan]Importing {command_name}[/bold cyan]",
-            total=None,  # indeterminate spinner until count is known
+            total=None,  # indeterminate spinner
         )
         self._live = Live(
             self._progress,
@@ -126,8 +118,6 @@ class ImportProgressHandler(logging.Handler):
         return Progress(
             SpinnerColumn(spinner_name="dots2", style="bold cyan"),
             TextColumn("[bold blue]{task.description}"),
-            BarColumn(bar_width=32, style="dim cyan", complete_style="bold green"),
-            MofNCompleteColumn(),
             TimeElapsedColumn(),
             console=self.console,
             transient=False,
@@ -146,7 +136,7 @@ class ImportProgressHandler(logging.Handler):
         # Silence StreamHandlers so we own the console exclusively
         for h in list(lib_logger.handlers):
             if isinstance(h, logging.StreamHandler) and not isinstance(
-                h, ImportProgressHandler
+                h, (ImportProgressHandler, logging.FileHandler)
             ):
                 self._silenced_handlers.append(h)
                 lib_logger.removeHandler(h)
@@ -191,41 +181,30 @@ class ImportProgressHandler(logging.Handler):
 
     def _process_record(self, level: int, msg: str) -> None:
         """Route a log record to the appropriate Rich renderer."""
-        # ── Try to parse a total count hint ──────────────────────────────────
-        if self.total_hint is None:
-            m = _COUNT_RE.search(msg)
-            if m:
-                count = int(m.group(1))
-                if count > 0:
-                    self.total_hint = count
-                    self._progress.update(self._task_id, total=count)
+        msg = msg.strip()
+        if not msg:
+            return
 
         # ── Suppress internal noise ───────────────────────────────────────────
         if _SUPPRESS_RE.search(msg):
             return
 
         # ── Classify and render ───────────────────────────────────────────────
-        if _AGGREGATE_SUMMARY_RE.search(msg):
-            # Keep visible for operator context, but do not count as item events.
+        if _GENERIC_ERROR_RE.search(msg):
+            # Contextual error lines (e.g. HTTP status) that accompany a failure line.
             self._print_stage(msg)
 
         elif _ITEM_FAILURE_RE.search(msg):
             self._print_item(msg, "error")
-            self.failure_count += 1
-            self._advance()
 
         elif level == logging.WARNING or _ITEM_WARNING_RE.search(msg):
             self._print_item(msg, "warning")
-            self.warning_count += 1
 
         elif _ITEM_SUCCESS_RE.search(msg):
             self._print_item(msg, "success")
-            self.success_count += 1
-            self._advance()
 
         elif level >= logging.ERROR:
             # Errors like transport/API status can accompany a per-item failure line.
-            # Render them, but do not treat as additional failed items.
             self._print_stage(msg)
 
         else:
@@ -233,9 +212,6 @@ class ImportProgressHandler(logging.Handler):
             self._print_stage(msg)
 
     # ── Rich renderers ────────────────────────────────────────────────────────
-
-    def _advance(self) -> None:
-        self._progress.update(self._task_id, advance=1)
 
     def _print_item(self, msg: str, kind: str) -> None:
         """Permanently print a per-item status line above the live progress bar."""
@@ -265,54 +241,3 @@ class ImportProgressHandler(logging.Handler):
         if not clean:
             return
         self.console.print(Text(f"  · {clean}", style="dim"))
-
-    # ── Summary panel ─────────────────────────────────────────────────────────
-
-    def print_summary(self) -> None:
-        """Render the final import summary panel with colour-coded counts."""
-        if (
-            self.success_count == 0
-            and self.failure_count == 0
-            and self.warning_count == 0
-        ):
-            return
-
-        total = self.success_count + self.failure_count
-
-        # Grid layout: ✔ N  imported   ✖ N  failed   ⚠ N  warnings
-        grid = Table.grid(padding=(0, 3))
-        grid.add_column(style="bold green", justify="right")
-        grid.add_column(style="green")
-        grid.add_column(style="bold red", justify="right")
-        grid.add_column(style="red")
-        grid.add_column(style="bold yellow", justify="right")
-        grid.add_column(style="yellow")
-
-        grid.add_row(
-            f"✔  {self.success_count}",
-            "imported",
-            f"✖  {self.failure_count}",
-            "failed",
-            f"⚠  {self.warning_count}",
-            "warnings",
-        )
-
-        # Panel label and border colour reflect overall outcome
-        if self.failure_count == 0:
-            title = f"[bold green]Import Complete[/bold green]  —  {self.command_name}"
-            border = "green"
-        elif self.success_count == 0:
-            title = f"[bold red]Import Failed[/bold red]  —  {self.command_name}"
-            border = "red"
-        else:
-            title = (
-                f"[bold yellow]Import Partial[/bold yellow]  —  {self.command_name}"
-                f"  ({self.failure_count}/{total} failed)"
-            )
-            border = "yellow"
-
-        self.console.print()
-        self.console.print(
-            Panel(grid, title=title, border_style=border, padding=(1, 4))
-        )
-        self.console.print()

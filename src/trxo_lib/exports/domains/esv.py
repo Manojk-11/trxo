@@ -3,6 +3,7 @@ ESV export services.
 """
 
 from typing import Any
+from trxo_lib.config.api_endpoints import ESVEndpoints
 from trxo_lib.config.api_headers import get_headers
 from trxo_lib.exports.processor import BaseExporter
 
@@ -21,7 +22,7 @@ class EsvSecretsExportService:
 
         return exporter.export_data(
             command_name="esv_secrets",
-            api_endpoint="/environment/secrets",
+            api_endpoint=ESVEndpoints.Secrets.LIST,
             headers=headers,
             **safe_kwargs,
         )
@@ -41,7 +42,7 @@ class EsvVariablesExportService:
 
         return exporter.export_data(
             command_name="esv_variables",
-            api_endpoint="/environment/variables",
+            api_endpoint=ESVEndpoints.Variables.LIST,
             headers=headers,
             **safe_kwargs,
         )

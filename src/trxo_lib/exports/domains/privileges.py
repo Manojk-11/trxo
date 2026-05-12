@@ -3,6 +3,7 @@ Privileges export service.
 """
 
 from typing import Any, Dict
+from trxo_lib.config.api_endpoints import IDMEndpoints
 from trxo_lib.config.api_headers import get_headers
 from trxo_lib.exports.processor import BaseExporter
 
@@ -39,7 +40,7 @@ class PrivilegesExportService:
 
         return exporter.export_data(
             command_name="privileges",
-            api_endpoint='/openidm/config?_queryFilter=_id co "privilege"',
+            api_endpoint=IDMEndpoints.Config.LIST_PRIVILEGES,
             headers=headers,
             response_filter=response_filter,
             **safe_kwargs,
