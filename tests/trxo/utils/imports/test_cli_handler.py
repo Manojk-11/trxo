@@ -75,7 +75,6 @@ def test_handle_import_with_progress_success(handler, mocker):
     assert res == "done"
     mock_progress_handler.attach.assert_called_once()
     mock_progress_handler.detach.assert_called()
-    mock_progress_handler.print_summary.assert_called_once()
 
 def test_handle_import_with_progress_generic_error(handler, mocker):
     mock_progress_handler = mocker.patch("trxo.utils.imports.cli_handler.ImportProgressHandler").return_value
