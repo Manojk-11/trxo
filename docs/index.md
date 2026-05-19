@@ -132,7 +132,7 @@ hide:
         <div style="padding: 8px 0;">
           <div class="sib-form-block sib-image-form-block" style="text-align: center">
             <a href="http://www.trevonix.com" target="_blank">
-              <img src="https://img.mailinblue.com/7679181/images/content_library/original/664c8af4ed408a0720ceb3e7.png" style="width: 300px;height: 79px;" alt="" title="" />
+              <img src="./assets/logo/trevonix-logo.png" style="width: 300px;height: 79px;" alt="" title="" />
             </a>
           </div>
         </div>
