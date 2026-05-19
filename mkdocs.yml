@@ -7,7 +7,7 @@ edit_uri: edit/main/docs/
 theme:
   name: material
   logo: assets/logo/trevonix-logo.png
-  favicon: assets/logo/trevonix-logo.png
+  favicon: assets/logo/Favicon.png
   features:
     - navigation.instant
     - navigation.tabs
