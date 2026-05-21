@@ -65,6 +65,10 @@ For detailed requirements and development setup, see [Installation Guide](docs/i
 
 For command references, examples, and detailed workflows, refer to the [Usage Guide](docs/usage.md).
 
+### Library & CLI Documentation
+
+> **📌 TBD** — Library and CLI split documentation coming soon pending packaging and publishing finalization.
+
 ### Community & Legal
 
 *   [**Code of Conduct**](CODE_OF_CONDUCT.md): Our standards for a welcoming community.
