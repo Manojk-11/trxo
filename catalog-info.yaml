@@ -1,10 +1,77 @@
 apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: trxo-system
+  description: The core system managing all TRXO modules.
+spec:
+  owner: Backstage Admins
+---
+apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
   name: trxo
+  description: TRXO core open-source service.
   annotations:
+    # 1. GitHub Actions Integration (enables the CI/CD tab)
     github.com/project-slug: Manojk-11/trxo
+    # 2. TechDocs Integration (points to mkdocs.yml in root and docs/ directory)
+    backstage.io/techdocs-ref: dir:.
+  links:
+    # 3. Direct links shown on the About card (e.g., README, Homepage)
+    - url: https://github.com/Manojk-11/trxo
+      title: Source Code
+      icon: github
+    - url: https://github.com/Manojk-11/trxo/blob/main/README.md
+      title: Project README
+      icon: dashboard
 spec:
-  type: other
-  lifecycle: unknown
+  type: service
+  lifecycle: experimental
   owner: Backstage Admins
+  system: trxo-system
+  providesApis:
+    - trxo-public-api
+  consumesApis:
+    - external-payment-gateway
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: trxo-public-api
+  description: Public facing endpoints for TRXO.
+spec:
+  type: openapi
+  lifecycle: experimental
+  owner: Backstage Admins
+  definition: |
+    openapi: 3.0.0
+    info:
+      title: TRXO API
+      version: 1.0.0
+    paths:
+      /health:
+        get:
+          responses:
+            '200':
+              description: Healthy
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: external-payment-gateway
+  description: Dependency API representing an external payment processor.
+spec:
+  type: openapi
+  lifecycle: production
+  owner: Backstage Admins
+  definition: |
+    openapi: 3.0.0
+    info:
+      title: Payment API
+      version: 2.0.0
+    paths:
+      /charge:
+        post:
+          responses:
+            '200':
+              description: Charged
