@@ -1,0 +1,10 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: trxo
+  annotations:
+    github.com/project-slug: Manojk-11/trxo
+spec:
+  type: other
+  lifecycle: unknown
+  owner: Backstage Admins
